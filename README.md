@@ -4,6 +4,8 @@
 
 [![Build Firmware](https://github.com/Mi-Bee-Studio/seeed-xiao-rp2350/actions/workflows/build.yml/badge.svg)](https://github.com/Mi-Bee-Studio/seeed-xiao-rp2350/actions/workflows/build.yml)
 
+<img src="docs/images/seeed-xiao-rp2350.jpg" alt="Seeed XIAO RP2350" width="420">
+
 A board under the board-centric repo convention. **This repo is organized with the board as root:**
 
 ```

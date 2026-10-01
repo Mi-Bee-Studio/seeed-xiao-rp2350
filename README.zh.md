@@ -4,6 +4,8 @@
 
 [![Build Firmware](https://github.com/Mi-Bee-Studio/seeed-xiao-rp2350/actions/workflows/build.yml/badge.svg)](https://github.com/Mi-Bee-Studio/seeed-xiao-rp2350/actions/workflows/build.yml)
 
+<img src="docs/images/seeed-xiao-rp2350.jpg" alt="Seeed XIAO RP2350" width="420">
+
 主板目录规范的一块板。**本仓库按"主板为根"规范组织**：
 
 ```
