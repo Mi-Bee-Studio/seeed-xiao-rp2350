@@ -1,0 +1,92 @@
+name: Build Firmware
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [blink]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pico SDK + toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+          git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git $HOME/pico-sdk
+          cd $HOME/pico-sdk && git submodule update --init lib/tinyusb
+
+      - name: Build Firmware (${{ matrix.project }})
+        working-directory: ${{ matrix.project }}
+        run: |
+          export PICO_SDK_PATH=$HOME/pico-sdk
+          cmake -B build -S . -DPICO_BOARD=seeed_xiao_rp2350
+          cmake --build build
+
+      - name: Prepare Artifacts
+        working-directory: ${{ matrix.project }}
+        run: |
+          mkdir -p ../firmware
+          cp build/*.uf2 ../firmware/${{ matrix.project }}.uf2
+          cp build/*.elf ../firmware/${{ matrix.project }}.elf
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.project }}
+          path: firmware/
+          retention-days: 30
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: firmware-*
+          merge-multiple: true
+          path: firmware/
+
+      - name: Generate Checksums
+        run: |
+          cd firmware
+          sha256sum * > ../checksums.txt
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > RELEASE_NOTES.md << EOF
+          # Seeed XIAO RP2350 Firmware ${{ github.ref_name }}
+
+          ## Flash Instructions
+
+          1. Hold the **BOOT** button, plug in USB (or press RESET while holding BOOT) —
+             the board enumerates as the \`RP2350\` mass-storage drive
+          2. Drag the \`.uf2\` onto the drive — the board reboots into the firmware
+          3. Hands-free alternative: open the CDC port at **1200 baud** to soft-reboot
+             into BOOTSEL (pico-sdk default), or use picotool
+          EOF
+          ASSETS="firmware/blink.uf2 firmware/blink.elf checksums.txt"
+          if gh release view ${{ github.ref_name }} > /dev/null 2>&1; then
+            gh release upload ${{ github.ref_name }} $ASSETS --clobber
+          else
+            gh release create ${{ github.ref_name }} $ASSETS \
+              --title "Seeed XIAO RP2350 Firmware ${{ github.ref_name }}" \
+              --notes-file RELEASE_NOTES.md
+          fi

@@ -1,0 +1,9 @@
+# RP2040/RP2350 (pico-sdk) 构建产物
+build/
+build-*/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
