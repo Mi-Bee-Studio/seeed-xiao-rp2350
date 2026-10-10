@@ -33,6 +33,17 @@ int main(void)
            PICO_DEFAULT_LED_PIN, id,
            (unsigned)(PICO_FLASH_SIZE_BYTES / 1024));
 
+    /* SELFTEST 自检行（工作区 AGENTS.md"固件自检行"规范）：一行可 grep 的
+     * 开机体检证据，serialtap selftest 按前缀聚合做台架异常发现。 */
+#if PICO_RP2350
+    printf("SELFTEST: board=seeed-xiao-rp2350-blink fw=v0.1 chip=RP2350 flash=%uK uid=%.16s\n",
+           (unsigned)(PICO_FLASH_SIZE_BYTES / 1024), id);
+#else
+    printf("SELFTEST: board=seeed-xiao-rp2350-blink fw=v0.1 chip=RP2040 flash=%uK uid=%.16s\n",
+           (unsigned)(PICO_FLASH_SIZE_BYTES / 1024), id);
+#endif
+
+
     /* 硬件看门狗：8s 超时（约 8 个主循环周期喂不上即重启自恢复） */
     watchdog_enable(8000, 1);
 
